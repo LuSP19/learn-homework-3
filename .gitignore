@@ -1,0 +1,10 @@
+# data.mos.ru files
+*.xlsx
+*.json
+*.xml
+
+# Environments
+Include/
+Lib/
+Scripts/
+pyvenv.cfg
