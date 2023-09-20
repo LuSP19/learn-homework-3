@@ -29,7 +29,7 @@
 departments = [
     {
         "title": "HR department",
-        "employers": [
+        "employees": [
             {"first_name": "Daniel", "last_name": "Berger", "position": "Junior HR", "salary_rub": 50000},
             {"first_name": "Michelle", "last_name": "Frey", "position": "Middle HR", "salary_rub": 75000},
             {"first_name": "Kevin", "last_name": "Jimenez", "position": "Middle HR", "salary_rub": 70000},
@@ -38,7 +38,7 @@ departments = [
     },
     {
         "title": "IT department",
-        "employers": [
+        "employees": [
             {"first_name": "Christina", "last_name": "Walker", "position": "Python dev", "salary_rub": 80000},
             {"first_name": "Michelle", "last_name": "Gilbert", "position": "JS dev", "salary_rub": 85000},
             {"first_name": "Caitlin", "last_name": "Bradley", "position": "Teamlead", "salary_rub": 950000},
