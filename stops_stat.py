@@ -1,4 +1,5 @@
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentTypeError
+from collections import defaultdict
 from itertools import islice
 from math import ceil
 from multiprocessing import Manager, Process
@@ -10,9 +11,10 @@ import pandas as pd
 
 
 def validate_file(filename):
-    if not os.path.exists(filename):
-        raise argparse.ArgumentTypeError(f'{filename} does not exist')
-    return filename
+    filepath = os.path.abspath(filename)
+    if not os.path.exists(filepath):
+        raise ArgumentTypeError(f'{filename} does not exist')
+    return filepath
 
 
 def get_stops_df(filename, usecols):
@@ -28,15 +30,12 @@ def get_stops_df(filename, usecols):
 
 
 def get_street_with_most_stops(stop_addresses):
-    street_stops_count = {}
+    street_stops_count = defaultdict(int)
     for address in stop_addresses:
         if not isinstance(address, str):
             continue
         street = address.split(',')[0]
-        if street in street_stops_count:
-            street_stops_count[street] += 1
-        else:
-            street_stops_count[street] = 1
+        street_stops_count[street] += 1
 
     return max(street_stops_count, key=street_stops_count.get)
 
@@ -65,15 +64,15 @@ def get_subway_stations(subway_stations_df):
     station_locs_aggregated = subway_stations_df.groupby('NameOfStation').agg(
         {'Longitude_WGS84': 'mean', 'Latitude_WGS84': 'mean'}
     ).reset_index()
-    stations = dict([
-        (name, (lon, lat))
+    stations = {
+        name: (lon, lat)
         for name, lon, lat
         in zip(
             station_locs_aggregated.NameOfStation,
             station_locs_aggregated.Longitude_WGS84,
             station_locs_aggregated.Latitude_WGS84
             )
-    ])
+    }
 
     return stations
 
@@ -81,20 +80,17 @@ def get_subway_stations(subway_stations_df):
 def count_stops_near_the_stations_chunk(
     stations_with_loc,
     stop_locs,
-    results,
+    stops_near_the_stations_chunks,
     proc_index
 ):
-    stops_near_the_stations = {}
+    stops_near_the_stations = defaultdict(int)
 
     for station in stations_with_loc:
         for loc in stop_locs:
             if distance.distance(stations_with_loc[station], loc).km < 0.5:
-                if station in stops_near_the_stations:
-                    stops_near_the_stations[station] += 1
-                else:
-                    stops_near_the_stations[station] = 1
+                stops_near_the_stations[station] += 1
 
-    results[proc_index] = stops_near_the_stations
+    stops_near_the_stations_chunks[proc_index] = stops_near_the_stations
 
 
 def split_dict(dictionary, chunk_size):
@@ -102,10 +98,10 @@ def split_dict(dictionary, chunk_size):
     chunks_count = ceil(len(dictionary) / chunk_size)
 
     for i in range(chunks_count):
-        chunks.append(dict([
-            (key, dictionary[key])
+        chunks.append({
+            key: dictionary[key]
             for key
-            in islice(dictionary, i * chunk_size, (i + 1) * chunk_size)])
+            in islice(dictionary, i * chunk_size, (i + 1) * chunk_size)}
         )
 
     return chunks
@@ -167,15 +163,13 @@ def main():
         help='Subway stations *.xlsx file'
     )
     args = parser.parse_args()
-    bus_stops_filepath = os.path.abspath(args.bus_stops_file)
-    subway_stations_filepath = os.path.abspath(args.subway_stations_file)
 
     bus_stops_df = get_stops_df(
-        bus_stops_filepath,
+        args.bus_stops_file,
         'C,D,F,H,N'
     )
     subway_stations_df = get_stops_df(
-        subway_stations_filepath,
+        args.subway_stations_file,
         'F,G,I,Q'
     )
 
